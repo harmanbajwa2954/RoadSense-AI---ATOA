@@ -1,0 +1,55 @@
+{% extends "base.html" %}
+{% block title %}Driver Monitoring{% endblock %}
+
+{% block content %}
+<div class="page-header">
+  <div>
+    <span class="eyebrow">Driver Monitoring</span>
+    <h1>Driver Drowsiness Detection</h1>
+    <p class="page-sub">Upload a driver-facing video to run fatigue analysis in isolation from the workspace.</p>
+  </div>
+</div>
+
+<div class="driver-grid">
+  <div class="glass-card">
+    <span class="card-label">Driver-Facing Video</span>
+    <div id="dr-upload-zone" class="upload-zone" style="margin-top: var(--sp-4);">
+      <div class="upload-icon">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M2 12s3.5-7 10-7 10 7 10 7-3.5 7-10 7-10-7-10-7Z"/><circle cx="12" cy="12" r="3"/></svg>
+      </div>
+      <h3>Drop a driver session video</h3>
+      <p>or click to browse · MP4, MOV, AVI supported</p>
+      <input type="file" id="dr-file-input" accept=".mp4,.avi,.mov,.mkv,.webm" />
+    </div>
+
+    <div id="dr-progress-wrap" style="display:none; margin-top: var(--sp-4);">
+      <div class="progress-track"><div class="progress-fill" id="dr-progress-fill"></div></div>
+      <p class="card-label" style="margin-top: var(--sp-2);" id="dr-progress-label">Uploading…</p>
+    </div>
+
+    <div id="dr-results-area" style="margin-top: var(--sp-6); position:relative;">
+      <div class="empty-state">
+        <div class="empty-icon"><svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M2 12s3.5-7 10-7 10 7 10 7-3.5 7-10 7-10-7-10-7Z"/></svg></div>
+        <h4>No session analyzed yet</h4>
+        <p>Upload a video to see driver status, eye/yawn tracking, and fatigue level.</p>
+      </div>
+    </div>
+  </div>
+
+  <div class="companion-card">
+    <div class="companion-icon">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="5" y="2" width="14" height="20" rx="2"/><line x1="12" y1="18" x2="12.01" y2="18"/></svg>
+    </div>
+    <h4>RoadSense AI Companion</h4>
+    <p>Get real-time fatigue alerts on your phone, mirrored from the in-cabin monitor.</p>
+    <button class="btn btn-secondary" style="width:100%;" id="companion-download-btn">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
+      Download Companion App
+    </button>
+  </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script src="{{ url_for('static', filename='js/drowsiness.js') }}"></script>
+{% endblock %}

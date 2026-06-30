@@ -1,0 +1,53 @@
+{% extends "base.html" %}
+{% block title %}Live Detection Lab{% endblock %}
+
+{% block content %}
+<div class="page-header">
+  <div>
+    <span class="eyebrow">Live Detection Lab</span>
+    <h1>Independent Module Demonstrations</h1>
+    <p class="page-sub">Each card runs its own webcam feed and model — there is no shared or unified pipeline.</p>
+  </div>
+</div>
+
+<div class="live-grid">
+  {% for mod in modules %}
+  <div class="glass-card live-card" data-module="{{ mod.key }}">
+    <div class="live-card-head">
+      <div class="live-card-title">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"/><path d="M3 12c0-1.5 4-9 9-9s9 7.5 9 9-4 9-9 9-9-7.5-9-9Z"/></svg>
+        <h3>{{ mod.label }}</h3>
+      </div>
+      <span class="badge gray status-badge">Idle</span>
+    </div>
+
+    <div class="feed-frame" style="position:relative;">
+      <video class="live-video" autoplay muted playsinline style="display:none; width:100%; height:100%; object-fit:cover; position:absolute; top:0; left:0;"></video>
+      <img class="live-result" style="display:none; width:100%; height:100%; object-fit:cover; position:absolute; top:0; left:0; z-index:10;">
+      <canvas class="live-canvas" style="display:none;"></canvas>
+      <div class="feed-placeholder">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="6" width="14" height="12" rx="2"/><polygon points="22 8.5 16 12 22 15.5 22 8.5"/></svg>
+        <span>FEED OFFLINE</span>
+      </div>
+    </div>
+
+    <div class="live-card-controls">
+      <button class="btn btn-primary btn-sm start-btn">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polygon points="5 3 19 12 5 21 5 3"/></svg>
+        Start Detection
+      </button>
+      <button class="btn btn-secondary btn-sm stop-btn" disabled>
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="6" y="6" width="12" height="12" rx="1"/></svg>
+        Stop Detection
+      </button>
+    </div>
+
+    <div class="live-card-result">Awaiting start…</div>
+  </div>
+  {% endfor %}
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script src="{{ url_for('static', filename='js/live_detection.js') }}"></script>
+{% endblock %}

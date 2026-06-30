@@ -1,0 +1,134 @@
+{% extends "base.html" %}
+{% block title %}Incident Monitoring{% endblock %}
+
+{% block content %}
+<div class="page-header">
+  <div>
+    <span class="eyebrow">Incident Monitoring</span>
+    <h1>Detected Incidents</h1>
+    <p class="page-sub">Crash and hazard events logged from the detection pipeline, stored locally in SQLite.</p>
+  </div>
+  <div class="header-actions">
+    <button class="btn btn-primary" id="new-incident-btn">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 5v14M5 12h14"/></svg>
+      Log Incident
+    </button>
+  </div>
+</div>
+
+<div class="stat-grid">
+  <div class="glass-card stat-card">
+    <div class="stat-top"><span class="card-label">Total Incidents</span><div class="stat-icon blue"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="18" height="18" rx="2"/></svg></div></div>
+    <div class="stat-value mono">{{ summary.total }}</div>
+  </div>
+  <div class="glass-card stat-card">
+    <div class="stat-top"><span class="card-label">Active</span><div class="stat-icon red"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10.29 3.86 1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0Z"/></svg></div></div>
+    <div class="stat-value mono">{{ summary.active }}</div>
+  </div>
+  <div class="glass-card stat-card">
+    <div class="stat-top"><span class="card-label">Critical Severity</span><div class="stat-icon amber"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/></svg></div></div>
+    <div class="stat-value mono">{{ summary.critical }}</div>
+  </div>
+  <div class="glass-card stat-card">
+    <div class="stat-top"><span class="card-label">Resolved</span><div class="stat-icon green"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg></div></div>
+    <div class="stat-value mono">{{ summary.resolved }}</div>
+  </div>
+</div>
+
+<div class="glass-card">
+  <div class="section-head">
+    <h2>Incident Log</h2>
+    <div class="filter-row" id="filter-row">
+      <button class="chip-filter active" data-filter="severity" data-value="all">All Severity</button>
+      <button class="chip-filter" data-filter="severity" data-value="Critical">Critical</button>
+      <button class="chip-filter" data-filter="severity" data-value="Moderate">Moderate</button>
+      <button class="chip-filter" data-filter="severity" data-value="Minor">Minor</button>
+    </div>
+  </div>
+
+  <div class="table-wrap">
+    <table class="data-table">
+      <thead>
+        <tr><th>ID</th><th>Time</th><th>Location</th><th>Severity</th><th>Status</th><th>Vehicle</th><th></th></tr>
+      </thead>
+      <tbody id="incident-tbody">
+        {% for inc in incidents %}
+        <tr data-id="{{ inc.id }}" data-severity="{{ inc.severity }}">
+          <td class="mono-cell">{{ inc.incident_code }}</td>
+          <td class="mono-cell">{{ inc.occurred_at[:16] }}</td>
+          <td>{{ inc.location }}</td>
+          <td>
+            <span class="severity-dot {{ inc.severity|lower }}"></span>{{ inc.severity }}
+          </td>
+          <td>
+            {% if inc.status == 'Active' %}<span class="badge red">{{ inc.status }}</span>
+            {% elif inc.status == 'Resolved' %}<span class="badge green">{{ inc.status }}</span>
+            {% else %}<span class="badge amber">{{ inc.status }}</span>{% endif %}
+          </td>
+          <td>{{ inc.vehicle_type }}</td>
+          <td>
+            <div class="row-actions">
+              <button class="btn btn-ghost btn-sm edit-incident-btn" data-id="{{ inc.id }}">Edit</button>
+              <button class="btn btn-danger btn-sm delete-incident-btn" data-id="{{ inc.id }}">Delete</button>
+            </div>
+          </td>
+        </tr>
+        {% else %}
+        <tr><td colspan="7" style="text-align:center; color: var(--text-muted); padding: var(--sp-6) 0;">No incidents logged.</td></tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+</div>
+
+<!-- Create / Edit modal -->
+<div class="modal-backdrop" id="incident-modal-backdrop">
+  <div class="modal-panel">
+    <div class="modal-header">
+      <h3 id="incident-modal-title">Log Incident</h3>
+      <button class="icon-btn" id="incident-modal-close" aria-label="Close">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+      </button>
+    </div>
+    <form id="incident-form">
+      <input type="hidden" id="incident-id" />
+      <div class="form-field">
+        <label for="incident-location">Location</label>
+        <input class="form-input" id="incident-location" type="text" placeholder="e.g. Sector 5, Ring Road" required />
+      </div>
+      <div class="form-field">
+        <label for="incident-severity">Severity</label>
+        <select class="form-select" id="incident-severity">
+          <option value="Minor">Minor</option>
+          <option value="Moderate">Moderate</option>
+          <option value="Critical">Critical</option>
+        </select>
+      </div>
+      <div class="form-field">
+        <label for="incident-status">Status</label>
+        <select class="form-select" id="incident-status">
+          <option value="Active">Active</option>
+          <option value="Reviewing">Reviewing</option>
+          <option value="Resolved">Resolved</option>
+        </select>
+      </div>
+      <div class="form-field">
+        <label for="incident-vehicle">Vehicle Type</label>
+        <input class="form-input" id="incident-vehicle" type="text" placeholder="e.g. Sedan, Truck, Bus" />
+      </div>
+      <div class="form-field">
+        <label for="incident-notes">Notes</label>
+        <textarea class="form-textarea" id="incident-notes" rows="2" placeholder="Optional notes"></textarea>
+      </div>
+      <div class="modal-actions">
+        <button type="button" class="btn btn-ghost" id="incident-cancel-btn">Cancel</button>
+        <button type="submit" class="btn btn-primary">Save Incident</button>
+      </div>
+    </form>
+  </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script src="{{ url_for('static', filename='js/incidents.js') }}"></script>
+{% endblock %}

@@ -1,0 +1,73 @@
+{% extends "base.html" %}
+{% block title %}Analysis Workspace{% endblock %}
+
+{% block content %}
+<div class="page-header">
+  <div>
+    <span class="eyebrow">Road Analysis Workspace</span>
+    <h1>Upload Once, Analyze On Demand</h1>
+    <p class="page-sub">Each tab below runs its own model only when selected — nothing executes until you ask for it.</p>
+  </div>
+</div>
+
+<div class="workspace-grid">
+  <!-- Upload column -->
+  <div class="glass-card">
+    <span class="card-label">Source Media</span>
+    <div id="upload-zone" class="upload-zone" style="margin-top: var(--sp-4);">
+      <div class="upload-icon">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg>
+      </div>
+      <h3>Drop an image or video</h3>
+      <p>or click to browse · JPG, PNG, MP4, MOV supported</p>
+      <input type="file" id="file-input" accept=".jpg,.jpeg,.png,.bmp,.webp,.mp4,.avi,.mov,.mkv,.webm" />
+    </div>
+
+    <div id="upload-progress-wrap" style="display:none; margin-top: var(--sp-4);">
+      <div class="progress-track"><div class="progress-fill" id="upload-progress-fill"></div></div>
+      <p class="card-label" style="margin-top: var(--sp-2);" id="upload-progress-label">Uploading…</p>
+    </div>
+
+    <div id="preview-frame" class="preview-frame" style="display:none;"></div>
+
+    <div id="upload-meta" class="result-meta-list" style="margin-top: var(--sp-4); display:none;">
+      <div class="meta-row"><span class="meta-label">File</span><span class="meta-value" id="meta-filename">—</span></div>
+      <div class="meta-row"><span class="meta-label">Type</span><span class="meta-value" id="meta-type">—</span></div>
+    </div>
+  </div>
+
+  <!-- Results column -->
+  <div class="glass-card workspace-results">
+    <div class="tab-row" id="tab-row">
+      <button class="tab-btn active" data-tab="lane">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 12h4l3-9 4 18 3-9h4"/></svg>
+        Lane Analysis
+      </button>
+      <button class="tab-btn" data-tab="traffic_sign">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>
+        Traffic Sign Analysis
+      </button>
+      <button class="tab-btn" data-tab="pothole">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><path d="M9 9l6 6M15 9l-6 6"/></svg>
+        Road Surface Inspection
+      </button>
+      <button class="tab-btn" data-tab="emergency">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2v4M12 18v4M4.93 4.93l2.83 2.83M16.24 16.24l2.83 2.83M2 12h4M18 12h4M4.93 19.07l2.83-2.83M16.24 7.76l2.83-2.83"/></svg>
+        Emergency Vehicle Analysis
+      </button>
+    </div>
+
+    <div id="results-area">
+      <div class="empty-state">
+        <div class="empty-icon"><svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="18" height="18" rx="2"/></svg></div>
+        <h4>Upload media to begin</h4>
+        <p>Once uploaded, select a tab above to run that module's analysis.</p>
+      </div>
+    </div>
+  </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script src="{{ url_for('static', filename='js/workspace.js') }}"></script>
+{% endblock %}

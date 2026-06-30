@@ -1,0 +1,164 @@
+{% extends "base.html" %}
+{% block title %}ATOA Alert System{% endblock %}
+
+{% block content %}
+<div class="page-header">
+  <div>
+    <span class="eyebrow">ATOA Alert System</span>
+    <h1>Crash Detection & Proximity Alert</h1>
+    <p class="page-sub">Real-time crash detection via device sensors with Firebase-powered alert broadcasting to nearby drivers.</p>
+  </div>
+  <div class="header-actions">
+    <span class="badge gray" id="atoa-state-badge">
+      <span class="status-dot" style="animation:none;"></span>
+      <span id="atoa-state-text">IDLE</span>
+    </span>
+  </div>
+</div>
+
+<!-- Stat cards -->
+<div class="stat-grid">
+  <div class="glass-card stat-card">
+    <div class="stat-top"><span class="card-label">Current Speed</span><div class="stat-icon green"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M13 2 3 14h7l-1 8 11-12h-7l1-8Z"/></svg></div></div>
+    <div class="stat-value mono" id="atoa-speed">0.0 <small style="font-size:0.5em; color:var(--text-muted);">km/h</small></div>
+  </div>
+  <div class="glass-card stat-card">
+    <div class="stat-top"><span class="card-label">Max G-Force</span><div class="stat-icon" id="atoa-gforce-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg></div></div>
+    <div class="stat-value mono" id="atoa-gforce">0.0 <small style="font-size:0.5em; color:var(--text-muted);">Gs</small></div>
+  </div>
+  <div class="glass-card stat-card">
+    <div class="stat-top"><span class="card-label">System State</span><div class="stat-icon blue"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10Z"/></svg></div></div>
+    <div class="stat-value mono" id="atoa-system-state" style="font-size:var(--fs-lg);">IDLE</div>
+  </div>
+  <div class="glass-card stat-card">
+    <div class="stat-top"><span class="card-label">Nearby Alerts</span><div class="stat-icon" id="atoa-alert-count-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10.29 3.86 1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0Z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg></div></div>
+    <div class="stat-value mono" id="atoa-alert-count">0</div>
+  </div>
+</div>
+
+<!-- Alert banner (hidden by default) -->
+<div class="atoa-alert-banner" id="atoa-alert-banner" style="display:none;">
+  <div class="atoa-alert-banner-icon">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10.29 3.86 1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0Z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>
+  </div>
+  <div class="atoa-alert-banner-text">
+    <span id="atoa-alert-banner-title">CRASH DETECTED</span>
+    <span id="atoa-alert-banner-sub" class="mono">Sending alert to nearby drivers...</span>
+  </div>
+  <button class="btn btn-ghost btn-sm" id="atoa-dismiss-banner-btn">Dismiss</button>
+</div>
+
+<!-- Main content grid -->
+<div class="atoa-grid">
+  <!-- Left panel: Activation + Telemetry -->
+  <div class="glass-card atoa-control-panel">
+    <div class="section-head"><h2>Sensor Control</h2></div>
+
+    <!-- Activation button (shown when idle) -->
+    <div class="atoa-activate-wrap" id="atoa-activate-wrap">
+      <button class="atoa-activate-btn" id="atoa-activate-btn">
+        <div class="atoa-activate-ring"></div>
+        <div class="atoa-activate-inner">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polygon points="5 3 19 12 5 21 5 3"/></svg>
+          <span>ACTIVATE</span>
+        </div>
+      </button>
+      <p class="atoa-activate-hint">Tap to start crash detection sensors.<br>Requires GPS &amp; motion permission.</p>
+    </div>
+
+    <!-- Telemetry display (shown when active) -->
+    <div class="atoa-telemetry" id="atoa-telemetry" style="display:none;">
+      <div class="atoa-telemetry-grid">
+        <div class="atoa-tele-item">
+          <span class="atoa-tele-label">Speed</span>
+          <div class="atoa-tele-value" id="atoa-tele-speed">
+            <span class="atoa-tele-num mono">0.0</span>
+            <span class="atoa-tele-unit">km/h</span>
+          </div>
+          <div class="atoa-gauge-bar"><div class="atoa-gauge-fill speed-fill" id="atoa-speed-fill" style="width:0%"></div></div>
+        </div>
+        <div class="atoa-tele-item">
+          <span class="atoa-tele-label">G-Force</span>
+          <div class="atoa-tele-value" id="atoa-tele-gforce">
+            <span class="atoa-tele-num mono">0.0</span>
+            <span class="atoa-tele-unit">Gs</span>
+          </div>
+          <div class="atoa-gauge-bar"><div class="atoa-gauge-fill gforce-fill" id="atoa-gforce-fill" style="width:0%"></div></div>
+        </div>
+      </div>
+      <div class="atoa-gps-readout">
+        <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 1 1 18 0Z"/><circle cx="12" cy="10" r="3"/></svg>
+        <span class="mono" id="atoa-gps-coords">Awaiting GPS fix...</span>
+      </div>
+
+      <div class="atoa-config-row">
+        <div class="atoa-config-item">
+          <span class="atoa-config-label">G-Force Threshold</span>
+          <span class="mono" id="atoa-threshold-display">4.0g</span>
+        </div>
+        <div class="atoa-config-item">
+          <span class="atoa-config-label">Alert Radius</span>
+          <span class="mono">2.0 km</span>
+        </div>
+        <div class="atoa-config-item">
+          <span class="atoa-config-label">Check Interval</span>
+          <span class="mono">3s</span>
+        </div>
+      </div>
+
+      <button class="btn btn-danger" id="atoa-deactivate-btn" style="width:100%; margin-top:var(--sp-4);">
+        <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="6" y="6" width="12" height="12" rx="1"/></svg>
+        Deactivate System
+      </button>
+    </div>
+  </div>
+
+  <!-- Right panel: Alert Feed -->
+  <div class="glass-card">
+    <div class="section-head">
+      <h2>Alert Feed</h2>
+      <span class="badge gray" id="atoa-feed-status">Listening</span>
+    </div>
+
+    <div class="atoa-alert-feed" id="atoa-alert-feed">
+      <!-- Server-side pre-loaded alerts -->
+      {% for alert in active_alerts %}
+      <div class="atoa-feed-item" data-id="{{ alert.id }}">
+        <div class="atoa-feed-icon red">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10.29 3.86 1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0Z"/></svg>
+        </div>
+        <div class="atoa-feed-body">
+          <div class="atoa-feed-title">{{ alert.incident_code }} — {{ alert.severity }}</div>
+          <div class="atoa-feed-meta mono">{{ alert.location }} · {{ alert.occurred_at[:16] }}</div>
+          <div class="atoa-feed-notes">{{ alert.notes }}</div>
+        </div>
+        <button class="btn btn-ghost btn-sm atoa-dismiss-btn" data-id="{{ alert.id }}">Dismiss</button>
+      </div>
+      {% else %}
+      <div class="empty-state" id="atoa-empty-feed">
+        <div class="empty-icon"><svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/></svg></div>
+        <h4>No active alerts</h4>
+        <p>Crash alerts from nearby devices will appear here in real-time.</p>
+      </div>
+      {% endfor %}
+    </div>
+  </div>
+</div>
+
+<!-- Firebase info card -->
+<div class="glass-card" style="margin-top:var(--sp-6);">
+  <div class="section-head"><h2>Connection Status</h2></div>
+  <div class="result-meta-list">
+    <div class="meta-row"><span class="meta-label">Firebase</span><span class="meta-value" id="atoa-firebase-status">Initializing...</span></div>
+    <div class="meta-row"><span class="meta-label">GPS Accuracy</span><span class="meta-value mono" id="atoa-gps-accuracy">—</span></div>
+    <div class="meta-row"><span class="meta-label">Sensor Status</span><span class="meta-value" id="atoa-sensor-status">Idle</span></div>
+    <div class="meta-row"><span class="meta-label">Speech Synthesis</span><span class="meta-value" id="atoa-speech-status">Available</span></div>
+  </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-app.js"></script>
+<script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-database.js"></script>
+<script src="{{ url_for('static', filename='js/crash_alert.js') }}"></script>
+{% endblock %}

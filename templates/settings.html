@@ -1,0 +1,72 @@
+{% extends "base.html" %}
+{% block title %}Settings{% endblock %}
+
+{% block content %}
+<div class="page-header">
+  <div>
+    <span class="eyebrow">Settings</span>
+    <h1>Platform Settings</h1>
+    <p class="page-sub">Model status, storage, and platform preferences for this offline deployment.</p>
+  </div>
+</div>
+
+<div class="settings-grid">
+  <div class="glass-card">
+    <div class="section-head"><h2>Model Status</h2></div>
+    <div class="system-status-grid">
+      {% for key, info in model_status.items() %}
+      <div class="system-status-row">
+        <div>
+          <div class="ss-label">{{ info.name }}</div>
+          <div class="mono" style="font-size: var(--fs-xs); color: var(--text-muted); margin-top: 2px;">
+            weights: {{ 'found' if info.weights_found else 'missing' }} · inference.py: {{ 'found' if info.inference_found else 'missing' }}
+          </div>
+        </div>
+        {% if info.loaded %}
+          <span class="badge green">Loaded · {{ info.load_time }}s</span>
+        {% else %}
+          <span class="badge red">Not Loaded</span>
+        {% endif %}
+      </div>
+      {% endfor %}
+    </div>
+  </div>
+
+  <div class="glass-card">
+    <div class="section-head"><h2>Preferences</h2></div>
+    <div class="toggle-row">
+      <span class="toggle-label">Enable desktop notifications</span>
+      <label class="switch"><input type="checkbox" checked /><span class="slider"></span></label>
+    </div>
+    <div class="toggle-row">
+      <span class="toggle-label">Auto-delete uploads after analysis</span>
+      <label class="switch"><input type="checkbox" checked /><span class="slider"></span></label>
+    </div>
+    <div class="toggle-row">
+      <span class="toggle-label">Dark interface (Command Center theme)</span>
+      <label class="switch"><input type="checkbox" checked disabled /><span class="slider"></span></label>
+    </div>
+    <div class="toggle-row">
+      <span class="toggle-label">Verbose inference logging</span>
+      <label class="switch"><input type="checkbox" /><span class="slider"></span></label>
+    </div>
+  </div>
+
+  <div class="glass-card">
+    <div class="section-head"><h2>Developed By</h2></div>
+    <div class="result-meta-list">
+      <div class="meta-row"><span class="meta-label">Harmanpreet Singh</span><span class="meta-value"><a href="https://harmanbajwa2954.github.io">Portfolio</a></span></div>
+      <div class="meta-row"><span class="meta-label">Akshat Saini</span><span class="meta-value"><a href="https://asr7code.github.io/Portfolio/">Portfolio</a></span></div>
+    </div>
+  </div>
+
+  <div class="glass-card">
+    <div class="section-head"><h2>Platform</h2></div>
+    <div class="result-meta-list">
+      <div class="meta-row"><span class="meta-label">Mode</span><span class="meta-value">Fully Offline</span></div>
+      <div class="meta-row"><span class="meta-label">Architecture</span><span class="meta-value">Routes → Services → Models</span></div>
+      <div class="meta-row"><span class="meta-label">Build</span><span class="meta-value">RoadSense AI v1.0</span></div>
+    </div>
+  </div>
+</div>
+{% endblock %}

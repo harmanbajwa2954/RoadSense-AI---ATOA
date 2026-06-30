@@ -1,0 +1,31 @@
+{% extends "base.html" %}
+{% block title %}Analytics{% endblock %}
+
+{% block content %}
+<div class="page-header">
+  <div>
+    <span class="eyebrow">Analytics</span>
+    <h1>Platform Analytics</h1>
+    <p class="page-sub">Aggregate detection trends across every module. Demo data shown until live volume accumulates.</p>
+  </div>
+</div>
+
+<div class="analytics-grid">
+  <div class="glass-card"><span class="card-label">Traffic Sign Distribution</span><canvas id="chart-signs" style="margin-top: var(--sp-4);"></canvas></div>
+  <div class="glass-card"><span class="card-label">Lane Detection Statistics</span><canvas id="chart-lane" style="margin-top: var(--sp-4);"></canvas></div>
+  <div class="glass-card"><span class="card-label">Road Hazard Statistics</span><canvas id="chart-hazards" style="margin-top: var(--sp-4);"></canvas></div>
+  <div class="glass-card"><span class="card-label">Emergency Vehicle Trends</span><canvas id="chart-emergency" style="margin-top: var(--sp-4);"></canvas></div>
+  <div class="glass-card"><span class="card-label">Crash Trends</span><canvas id="chart-crash" style="margin-top: var(--sp-4);"></canvas></div>
+  <div class="glass-card"><span class="card-label">Road Safety Index by Sector</span><canvas id="chart-safety" style="margin-top: var(--sp-4);"></canvas></div>
+</div>
+
+<div class="glass-card" style="margin-top: var(--sp-6);">
+  <span class="card-label">Inference Statistics — Avg. Time per Module (ms)</span>
+  <canvas id="chart-inference" style="margin-top: var(--sp-4); max-height: 220px;"></canvas>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.4/chart.umd.min.js"></script>
+<script src="{{ url_for('static', filename='js/analytics.js') }}"></script>
+{% endblock %}
