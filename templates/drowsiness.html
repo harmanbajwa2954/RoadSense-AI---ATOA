@@ -22,6 +22,16 @@
       <input type="file" id="dr-file-input" accept=".mp4,.avi,.mov,.mkv,.webm" />
     </div>
 
+    <div class="form-group" style="margin-top: var(--sp-4);">
+      <label for="dr-model-select" class="card-label">Select Model:</label>
+      <select id="dr-model-select" class="form-control" style="width: 100%; padding: 0.5rem; border-radius: 4px; border: 1px solid var(--border-color); background-color: var(--card-bg); color: var(--text-color);">
+        <option value="model.task">MediaPipe (model.task)</option>
+        <option value="model.h5">MobileNetV2 (model.h5)</option>
+        <option value="model.pth">PyTorch (model.pth)</option>
+      </select>
+    </div>
+
+
     <div id="dr-progress-wrap" style="display:none; margin-top: var(--sp-4);">
       <div class="progress-track"><div class="progress-fill" id="dr-progress-fill"></div></div>
       <p class="card-label" style="margin-top: var(--sp-2);" id="dr-progress-label">Uploading…</p>

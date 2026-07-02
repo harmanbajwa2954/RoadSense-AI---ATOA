@@ -54,7 +54,11 @@ def analyze_frame(module):
             
         handle = model_info["handle"]
         inference_mod = model_info["module"]
-        annotated, metrics = inference_mod.run_live_frame(handle, frame)
+        
+        if module == "drowsiness":
+            annotated, metrics = inference_mod.run_live_frame(handle, frame, model_choice="model.task")
+        else:
+            annotated, metrics = inference_mod.run_live_frame(handle, frame)
         
         _, buffer = cv2.imencode('.jpg', annotated)
         annotated_b64 = "data:image/jpeg;base64," + base64.b64encode(buffer).decode('utf-8')

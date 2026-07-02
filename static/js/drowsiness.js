@@ -49,8 +49,12 @@
   });
 
   function uploadAndAnalyze(file) {
+    const modelSelect = document.getElementById("dr-model-select");
+    const modelChoice = modelSelect ? modelSelect.value : "model.h5";
+
     const formData = new FormData();
     formData.append("file", file);
+    formData.append("model_choice", modelChoice);
 
     progressWrap.style.display = "block";
     progressFill.style.width = "10%";

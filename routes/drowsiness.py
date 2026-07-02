@@ -33,6 +33,7 @@ def upload_and_analyze_drowsiness():
     except ValueError as exc:
         return jsonify({"success": False, "error": str(exc)}), 400
 
-    result = drowsiness_service.analyze(abs_path, media_type)
+    model_choice = request.form.get("model_choice", "model.h5")
+    result = drowsiness_service.analyze(abs_path, media_type, model_choice)
 
     return jsonify({"success": result.get("status") == "Completed", "result": result})

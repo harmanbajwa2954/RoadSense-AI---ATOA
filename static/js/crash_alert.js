@@ -160,7 +160,7 @@
   // ── Deactivation ──
   deactivateBtn.addEventListener("click", () => {
     if (window.speechSynthesis) window.speechSynthesis.cancel();
-    
+
     if (watchId !== null) {
       navigator.geolocation.clearWatch(watchId);
       watchId = null;
@@ -196,7 +196,7 @@
   // ── Dismiss banner ──
   dismissBannerBtn.addEventListener("click", () => {
     if (window.speechSynthesis) window.speechSynthesis.cancel();
-    
+
     alertBanner.style.display = "none";
     alertBanner.classList.remove("crash", "warning");
     if (systemState === "ALERTING" || systemState === "CRASHED") {
@@ -317,7 +317,7 @@
     // Update stat card icon color
     if (gforceIcon) {
       gforceIcon.className = gforce > G_FORCE_THRESHOLD ? "stat-icon red" :
-                              gforce > G_FORCE_THRESHOLD * 0.6 ? "stat-icon amber" : "stat-icon green";
+        gforce > G_FORCE_THRESHOLD * 0.6 ? "stat-icon amber" : "stat-icon green";
     }
   }
 
@@ -389,13 +389,13 @@
 
     // Only listen for alerts from the last 5 minutes
     const fiveMinutesAgo = Date.now() - 5 * 60 * 1000;
-    
+
     alertsRef.orderByChild("time").startAt(fiveMinutesAgo).on("child_added", (snapshot) => {
       const alertData = snapshot.val();
-      
+
       // Ignore alerts sent by this exact device
       if (alertData.deviceId === DEVICE_ID) return;
-      
+
       // Ignore if we are the one crashing
       if (systemState === "CRASHED") return;
 
@@ -410,12 +410,15 @@
 
       if (dist < ALERT_RADIUS_KM) {
         setState("ALERTING");
-        
+
         let distText = dist.toFixed(1) + " kilometers";
         if (dist < 0.1) {
           distText = "less than 100 meters";
         }
-        
+
+        speak(
+          `Caution: Accident reported ${distText} ahead! Slow down!`
+        );
         speak(
           `Caution: Accident reported ${distText} ahead! Slow down!`
         );
@@ -503,9 +506,9 @@
     const a =
       Math.sin(dLat / 2) * Math.sin(dLat / 2) +
       Math.cos((lat1 * Math.PI) / 180) *
-        Math.cos((lat2 * Math.PI) / 180) *
-        Math.sin(dLon / 2) *
-        Math.sin(dLon / 2);
+      Math.cos((lat2 * Math.PI) / 180) *
+      Math.sin(dLon / 2) *
+      Math.sin(dLon / 2);
     const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
     return R * c;
   }

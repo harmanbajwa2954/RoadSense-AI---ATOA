@@ -25,17 +25,40 @@ INPUT_SIZE = 224
 
 
 def load_model(weights_path):
-    """Load the MobileNetV2 drowsiness classifier from an .h5 file."""
-    if not os.path.isfile(weights_path):
-        return {"weights_path": weights_path, "weights_found": False}
+    """Load the models for driver drowsiness detection."""
+    model_dir = os.path.dirname(weights_path)
+    h5_path = os.path.join(model_dir, "model.h5")
+    pth_path = os.path.join(model_dir, "model.pth")
+    task_path = os.path.join(model_dir, "model.task")
 
-    import tensorflow as tf
-    model = tf.keras.models.load_model(weights_path)
+    model = None
+    if os.path.isfile(h5_path):
+        import tensorflow as tf
+        model = tf.keras.models.load_model(h5_path)
+
+    mp_classifier = None
+    if os.path.isfile(task_path):
+        try:
+            import mediapipe as mp
+            from mediapipe.tasks import python
+            from mediapipe.tasks.python import vision
+            base_options = python.BaseOptions(model_asset_path=task_path)
+            options = vision.FaceLandmarkerOptions(
+                base_options=base_options,
+                output_face_blendshapes=True,
+                output_facial_transformation_matrixes=False,
+                num_faces=1)
+            mp_classifier = vision.FaceLandmarker.create_from_options(options)
+        except Exception as e:
+            print(f"Warning: Failed to load MediaPipe model: {e}")
 
     return {
         "weights_path": weights_path,
-        "weights_found": True,
+        "weights_found": model is not None or mp_classifier is not None,
         "model": model,
+        "mp_classifier": mp_classifier,
+        "pth_path": pth_path if os.path.isfile(pth_path) else None,
+        "task_path": task_path if os.path.isfile(task_path) else None,
     }
 
 
@@ -91,6 +114,87 @@ def _classify_frame(model, frame):
         "class_name": predicted_class
     }
 
+def _classify_frame_mp(mp_classifier, frame):
+    """Run classification on a single frame using MediaPipe FaceLandmarker."""
+    import mediapipe as mp
+    
+    rgb_frame = cv2.cvtColor(frame, cv2.COLOR_BGR2RGB)
+    mp_image = mp.Image(image_format=mp.ImageFormat.SRGB, data=rgb_frame)
+    
+    result = mp_classifier.detect(mp_image)
+    
+    predicted_class = "alert"
+    confidence = 1.0
+    drowsy_prob = 0.0
+    
+    if result.face_blendshapes and len(result.face_blendshapes) > 0:
+        blendshapes = result.face_blendshapes[0]
+        
+        eye_blink_left = 0.0
+        eye_blink_right = 0.0
+        jaw_open = 0.0
+        
+        for category in blendshapes:
+            if category.category_name == "eyeBlinkLeft":
+                eye_blink_left = category.score
+            elif category.category_name == "eyeBlinkRight":
+                eye_blink_right = category.score
+            elif category.category_name == "jawOpen":
+                jaw_open = category.score
+                
+        blink_score = (eye_blink_left + eye_blink_right) / 2.0
+        yawn_score = jaw_open
+        
+        if yawn_score > 0.5:
+            predicted_class = "yawning"
+            confidence = yawn_score
+            drowsy_prob = yawn_score
+        elif blink_score > 0.6:
+            predicted_class = "sleepy"
+            confidence = blink_score
+            drowsy_prob = blink_score
+        elif blink_score > 0.4:
+            predicted_class = "slowBlink"
+            confidence = blink_score
+            drowsy_prob = blink_score
+        else:
+            predicted_class = "alert"
+            confidence = 1.0 - max(blink_score, yawn_score)
+            drowsy_prob = max(blink_score, yawn_score)
+
+    if predicted_class == "sleepy":
+        driver_status = "Drowsy"
+        eye_status = "Closed"
+        yawning_status = "Not Detected"
+        fatigue_level = "Critical"
+    elif predicted_class == "slowBlink":
+        driver_status = "Fatigued"
+        eye_status = "Half-Closed"
+        yawning_status = "Not Detected"
+        fatigue_level = "High"
+    elif predicted_class == "yawning":
+        driver_status = "Fatigued"
+        eye_status = "Open"
+        yawning_status = "Detected"
+        fatigue_level = "Moderate"
+    else:
+        predicted_class = "alert"
+        driver_status = "Alert"
+        eye_status = "Open"
+        yawning_status = "Not Detected"
+        fatigue_level = "Low"
+
+    return {
+        "driver_status": driver_status,
+        "eye_status": eye_status,
+        "yawning_status": yawning_status,
+        "fatigue_level": fatigue_level,
+        "drowsy_probability": round(drowsy_prob * 100, 1),
+        "confidence": round(confidence * 100, 1),
+        "class_name": predicted_class
+    }
+
+
 
 def _draw_status(frame, prediction):
     """Draw status overlay on the frame."""
@@ -115,13 +219,17 @@ def _draw_status(frame, prediction):
     return frame
 
 
-def _process_image(model, media_path, output_dir):
+def _process_image(model, mp_classifier, model_choice, media_path, output_dir):
     """Run drowsiness classification on a single image."""
     frame = cv2.imread(media_path)
     if frame is None:
         raise ValueError(f"Cannot read image: {media_path}")
 
-    prediction = _classify_frame(model, frame)
+    if model_choice == "model.task":
+        prediction = _classify_frame_mp(mp_classifier, frame)
+    else:
+        prediction = _classify_frame(model, frame)
+        
     annotated = _draw_status(frame.copy(), prediction)
 
     annotated_filename = f"annotated_{os.path.basename(media_path)}"
@@ -131,7 +239,7 @@ def _process_image(model, media_path, output_dir):
     return annotated_path, prediction
 
 
-def _process_video(model, media_path, output_dir):
+def _process_video(model, mp_classifier, model_choice, media_path, output_dir):
     """Run drowsiness classification on video frames."""
     cap = cv2.VideoCapture(media_path)
     if not cap.isOpened():
@@ -155,7 +263,11 @@ def _process_video(model, media_path, output_dir):
         if not ret:
             break
 
-        prediction = _classify_frame(model, frame)
+        if model_choice == "model.task":
+            prediction = _classify_frame_mp(mp_classifier, frame)
+        else:
+            prediction = _classify_frame(model, frame)
+            
         last_prediction = prediction
 
         if prediction["driver_status"] in ("Drowsy", "Fatigued"):
@@ -188,17 +300,24 @@ def _process_video(model, media_path, output_dir):
     return annotated_path, last_prediction or {}, total_frames
 
 
-def run_inference(handle, media_path, media_type, output_dir):
+def run_inference(handle, media_path, media_type, output_dir, model_choice="model.h5"):
     """Run drowsiness detection on the given media file."""
+    if model_choice == "model.pth":
+        raise NotImplementedError("PyTorch inference is not implemented yet. Please provide the model architecture class.")
+        
     start = time.time()
     os.makedirs(output_dir, exist_ok=True)
 
     model = handle.get("model") if isinstance(handle, dict) else None
-    if model is None:
-        raise RuntimeError("Drowsiness detection model not loaded.")
+    mp_classifier = handle.get("mp_classifier") if isinstance(handle, dict) else None
+    
+    if model_choice == "model.h5" and model is None:
+        raise RuntimeError("TensorFlow drowsiness model not loaded.")
+    if model_choice == "model.task" and mp_classifier is None:
+        raise RuntimeError("MediaPipe drowsiness model not loaded.")
 
     if media_type == "image":
-        annotated_path, prediction = _process_image(model, media_path, output_dir)
+        annotated_path, prediction = _process_image(model, mp_classifier, model_choice, media_path, output_dir)
         elapsed = round(time.time() - start, 3)
         return {
             "annotated_path": annotated_path,
@@ -214,7 +333,7 @@ def run_inference(handle, media_path, media_type, output_dir):
         }
     else:
         annotated_path, prediction, frame_count = _process_video(
-            model, media_path, output_dir
+            model, mp_classifier, model_choice, media_path, output_dir
         )
         elapsed = round(time.time() - start, 3)
         return {
@@ -232,13 +351,21 @@ def run_inference(handle, media_path, media_type, output_dir):
         }
 
 
-def run_live_frame(handle, frame):
+def run_live_frame(handle, frame, model_choice="model.h5"):
     """Run real-time inference on a single BGR webcam frame for Live Detection."""
     model = handle.get("model") if isinstance(handle, dict) else None
-    if model is None:
+    mp_classifier = handle.get("mp_classifier") if isinstance(handle, dict) else None
+    
+    if model_choice == "model.h5" and model is None:
         return frame, {}
+    if model_choice == "model.task" and mp_classifier is None:
+        return frame, {"error": "MediaPipe model not loaded"}
 
-    prediction = _classify_frame(model, frame)
+    if model_choice == "model.task":
+        prediction = _classify_frame_mp(mp_classifier, frame)
+    else:
+        prediction = _classify_frame(model, frame)
+        
     annotated = _draw_status(frame.copy(), prediction)
 
     metrics = {

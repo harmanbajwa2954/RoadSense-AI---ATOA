@@ -15,7 +15,7 @@ from utils import model_loader
 from utils.db import get_connection
 
 
-def run_module_analysis(module_key, media_path, media_type):
+def run_module_analysis(module_key, media_path, media_type, **kwargs):
     """
     Run the requested module's inference on a piece of media and log the
     result into analysis_history. Returns a normalized result dict that
@@ -37,7 +37,7 @@ def run_module_analysis(module_key, media_path, media_type):
     output_dir = Config.OUTPUT_DIRS[module_key]
 
     try:
-        result = inference_module.run_inference(handle, media_path, media_type, output_dir)
+        result = inference_module.run_inference(handle, media_path, media_type, output_dir, **kwargs)
     except Exception as exc:  # noqa: BLE001 - surfaced to the UI as a failed run
         _log_history(module_key, meta["name"], os.path.basename(media_path), "Failed", None, None, None)
         return {
